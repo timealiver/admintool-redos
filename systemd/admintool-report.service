@@ -1,0 +1,13 @@
+[Unit]
+Description=admintool: еженедельный HTML-отчёт
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/admintool
+ExecStart=/opt/admintool/bin/admintool.sh --report --format html
+SuccessExitStatus=1 2
+StandardOutput=append:/var/log/admintool/systemd.log
+StandardError=append:/var/log/admintool/systemd.log
