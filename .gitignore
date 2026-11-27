@@ -1,0 +1,7 @@
+logs/*
+!logs/.gitkeep
+prep/
+__pycache__/
+*.pyc
+.DS_Store
+._*
