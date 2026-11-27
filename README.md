@@ -16,6 +16,8 @@
 | `conf/thresholds.json` | JSON | пороги, общие для Bash и Python |
 | `systemd/` | unit-файлы | три таймера и службы, `install.sh` |
 | `py/tests/` | Python | 16 тестов на unittest |
+| `generate_lekciya.py` | Python | п. 9: создаёт lekciya.docx в каталоге запуска (нужен python-docx) |
+| `py/build_lecture.py` | Python | генератор generate_lekciya.py по теме через GigaChat и мастер-промпт |
 
 Коды возврата всех модулей: 0 — OK, 1 — WARN, 2 — CRIT, 3 — ошибка самого инструмента.
 
@@ -39,5 +41,19 @@ python3 -m unittest discover -s py/tests -v
 ```
 
 Результаты — в `logs/`, вывод служб systemd — в `/var/log/admintool/systemd.log` и `journalctl -u admintool-*.service`.
+
+## Генерация лекции (п. 9)
+
+```bash
+pip install python-docx
+python3 generate_lekciya.py
+```
+
+Пересоздать скрипт по другой теме (ключ GigaChat — в переменной окружения, не в коде):
+
+```bash
+export GIGACHAT_AUTH_KEY=...
+python3 py/build_lecture.py "Тема лекции" --json lecture.json
+```
 
 Отчёт по работе — `report/`.
