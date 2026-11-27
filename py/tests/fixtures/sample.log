@@ -1,0 +1,14 @@
+Nov 21 09:00:01 redos systemd[1]: Started Session 5 of user root.
+Nov 21 09:01:10 redos sshd[1201]: Failed password for root from 10.0.0.5 port 50122 ssh2
+Nov 21 09:01:15 redos sshd[1201]: Failed password for root from 10.0.0.5 port 50130 ssh2
+Nov 21 09:02:00 redos sshd[1210]: Invalid user admin from 10.0.0.5 port 50200
+Nov 21 09:02:03 redos sshd[1210]: Failed password for invalid user admin from 10.0.0.5 port 50200 ssh2
+Nov 21 09:03:00 redos sshd[1220]: Failed password for timur from 192.168.1.20 port 41000 ssh2
+Nov 21 09:10:00 redos kernel: EXT4-fs error (device sda1): ext4_find_entry:1455: inode #131074: comm ls: reading directory lblock 0
+Nov 21 09:11:00 redos kernel: EXT4-fs error (device sda1): ext4_find_entry:1455: inode #262148: comm ls: reading directory lblock 0
+Nov 21 09:12:00 redos kernel: EXT4-fs error (device sda1): ext4_find_entry:1455: inode #393220: comm ls: reading directory lblock 0
+2026-11-21T09:20:00+03:00 redos crond[900]: (root) FAILED to open PAM security session
+2026-11-21T09:21:00+03:00 redos crond[901]: (root) FAILED to open PAM security session
+2026-11-21T09:30:00+03:00 redos audit[700]: AVC avc:  denied  { read } for pid=2345 comm="cat" path="/etc/shadow"
+-- Boot 3f2a9c1e5d7b4a60 --
+это строка без формата журнала
