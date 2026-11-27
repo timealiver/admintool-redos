@@ -1,0 +1,14 @@
+{
+  "cpu": 80,
+  "cpu_crit": 95,
+  "mem": 85,
+  "mem_crit": 95,
+  "disk": 90,
+  "disk_crit": 97,
+  "loss": 5,
+  "loss_crit": 50,
+  "ping_host": "8.8.8.8",
+  "disk_mounts": ["/", "/var", "/home"],
+  "failed_logins": 10,
+  "allowed_ports": [22, 2222, 80, 443, 445, 53, 123, 25]
+}
