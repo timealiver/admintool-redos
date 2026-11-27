@@ -18,17 +18,44 @@ DEFAULT_CA = os.path.join(ROOT_DIR, "conf", "russian_trusted_ca.pem")
 OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 CHAT_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
 
-MASTER_PROMPT = """Ты — преподаватель вуза, который пишет текст лекции для студентов технической специальности.
-Требования к тексту:
-1. Язык — русский, академический, но понятный; без воды и без обращений к читателю.
-2. Термины вводятся через определения. Каждое определение — отдельная строка строго в формате:
-ОПРЕДЕЛЕНИЕ: Термин — текст определения.
-3. Подзаголовки внутри раздела — строка, начинающаяся с «## ».
-4. Маркированный список — строки, начинающиеся с «- »; нумерованный — строки «1. », «2. » и т. д.
-5. Всё остальное — обычные абзацы, каждый абзац отдельной строкой.
-6. Не используй Markdown-разметку жирного и курсивного шрифта, таблицы, блоки кода, эмодзи и неразрывные пробелы.
-7. Не пиши заглушки вроде «здесь будет текст» — только полный содержательный текст.
-8. Не повторяй заголовок раздела в начале ответа."""
+MASTER_PROMPT = """Ты — преподаватель вуза. Ты пишешь текст лекции по Linux для студентов технической специальности.
+
+СОДЕРЖАНИЕ
+- Язык русский, академический, но понятный. Без воды, без обращений к читателю, без вопросов к читателю.
+- Только проверенные факты. Если называешь команду или утилиту, описывай то, что она действительно делает.
+- Никаких заглушек вида «здесь будет текст», «и т. д. по аналогии».
+
+ФОРМАТ ОТВЕТА — СТРОГО ПОСТРОЧНЫЙ
+Ответ состоит только из строк пяти видов. Каждая строка — ровно один элемент. Пустые строки допустимы и игнорируются.
+
+1. Подзаголовок:  ## Текст подзаголовка
+   - начинается ровно с «## » (два символа # и пробел), больше никаких #;
+   - обычный регистр: заглавная только первая буква и имена собственные (Linux, SELinux, systemd пишется как есть);
+   - не длиннее 8 слов, без точки в конце;
+   - запрещены подзаголовки «Определения», «Заключение», «Выводы», «Итоги», «Введение», а также повтор названия раздела.
+
+2. Определение:  ОПРЕДЕЛЕНИЕ: Термин — текст определения.
+   - строка начинается ровно с «ОПРЕДЕЛЕНИЕ: »;
+   - термин в обычном регистре (не заглавными буквами), затем пробел, длинное тире «—», пробел и одно-два предложения;
+   - определение никогда не бывает подзаголовком и не стоит внутри абзаца.
+
+3. Пункт маркированного списка:  - текст пункта
+4. Пункт нумерованного списка:  1. текст пункта  (далее 2., 3. …)
+   - в списке от 3 до 7 пунктов, каждый пункт — законченная мысль одной строкой.
+
+5. Абзац: любая другая строка — один абзац из 2–6 предложений. Абзац не начинается с «#», «-», цифры с точкой или «ОПРЕДЕЛЕНИЕ».
+
+ЗАПРЕЩЕНО
+- блоки кода, тройные кавычки, примеры скриптов построчно, строки, начинающиеся с «#!», «$» или «#» внутри кода;
+  команды упоминай только внутри абзаца или пункта списка, например: команда df -h показывает свободное место;
+- Markdown-выделение (**, __, `), таблицы, эмодзи, неразрывные пробелы, ссылки;
+- повтор названия раздела в начале ответа.
+
+СТРУКТУРА РАЗДЕЛА
+- первая строка — вводный абзац (без подзаголовка);
+- затем 3–5 подразделов: подзаголовок, после него минимум два абзаца;
+- в разделе не меньше двух определений и хотя бы один список;
+- раздел заканчивается обычным абзацем, без подзаголовка «Заключение»."""
 
 OUTLINE_SYSTEM = "Ты составляешь планы вузовских лекций. Отвечай только списком строк, без определений и пояснений."
 
@@ -41,14 +68,18 @@ SECTION_PROMPT = """Лекция на тему «{topic}». План лекци�
 {outline}
 
 Напиши полный текст раздела «{section}» объёмом около {words} слов.
-В разделе должно быть не меньше двух определений, хотя бы один подзаголовок и хотя бы один список."""
+Не затрагивай темы других разделов плана — они будут написаны отдельно.
+Соблюдай формат ответа и структуру раздела из системных требований строго."""
 
-CONTINUE_PROMPT = """Лекция на тему «{topic}», раздел «{section}». Уже написано:
+CONTINUE_PROMPT = """Лекция на тему «{topic}», раздел «{section}».
+Уже написаны подразделы: {subheadings}.
 
-{written}
+Последний абзац раздела:
+{tail}
 
-Продолжи этот раздел ещё примерно на {words} слов: раскрой новые аспекты темы, приведи примеры команд Linux
-и их назначение. Не повторяй уже написанное и не пиши заголовок раздела."""
+Допиши этот раздел ещё на {words} слов: 1–2 новых подраздела, которых нет в списке выше, с примерами команд Linux
+внутри абзацев. Не повторяй уже написанное, не пиши вводный абзац, название раздела и «Заключение».
+Соблюдай формат ответа из системных требований строго."""
 
 TEMPLATE = '''# -*- coding: utf-8 -*-
 try:
@@ -241,24 +272,50 @@ def parse_outline(text, sections):
     return lines[0], lines[1:sections + 1]
 
 
+FORBIDDEN_HEADINGS = {"определения", "определение", "заключение", "выводы", "вывод", "итоги", "введение"}
+DEFINITION = re.compile(r"^ОПРЕДЕЛЕНИЕ\s*[:.]\s*(.+?)\s+[—–-]\s+(.+)$", re.IGNORECASE)
+
+
+def fix_term(term):
+    if re.fullmatch(r"[A-Z0-9_-]+", term):
+        return term.lower()
+    if term.isupper():
+        return term[:1] + term[1:].lower()
+    return term
+
+
 def parse_section(text, title):
     blocks = [("h1", title)]
+    plain_title = re.sub(r"^\d+\.\s*", "", title).lower()
+    in_code = False
     for raw in text.splitlines():
-        line = clean(raw)
-        if not line or line.strip("#").strip().lower() == title.lower():
+        if raw.strip().startswith("```"):
+            in_code = not in_code
             continue
-        definition = re.match(r"^ОПРЕДЕЛЕНИЕ\s*[:.]\s*(.+?)\s+[—–-]\s+(.+)$", line, re.IGNORECASE)
+        if in_code or raw.lstrip().startswith(("#!", "$ ")):
+            continue
+        line = clean(raw)
+        if not line:
+            continue
+        bare = re.sub(r"^[#\s]+", "", line)
+        definition = DEFINITION.match(bare)
         if definition:
-            blocks.append(("definition", definition.group(1).strip(), definition.group(2).strip()))
+            blocks.append(("definition", fix_term(definition.group(1).strip()), definition.group(2).strip()))
         elif line.startswith("#"):
-            blocks.append(("h2", line.lstrip("#").strip()))
+            heading = bare.rstrip(".:")
+            if not heading or heading.lower() in FORBIDDEN_HEADINGS or heading.lower() == plain_title:
+                continue
+            if heading.isupper():
+                heading = heading[:1] + heading[1:].lower()
+            blocks.append(("h2", heading))
         elif re.match(r"^[-*•]\s+", line):
             blocks.append(("bullet", re.sub(r"^[-*•]\s+", "", line)))
         elif re.match(r"^\d+[.)]\s+", line):
             blocks.append(("number", re.sub(r"^\d+[.)]\s+", "", line)))
         else:
             blocks.append(("paragraph", line))
-    return blocks
+    return [b for i, b in enumerate(blocks)
+            if not (b[0] == "h2" and (i + 1 == len(blocks) or blocks[i + 1][0] in ("h1", "h2")))]
 
 
 def fix_heading(text):
@@ -347,9 +404,12 @@ def generate(args):
             for _ in range(2):
                 if len(text.split()) >= args.words * 0.85:
                     break
+                parsed = parse_section(text, heading)
+                subheadings = ", ".join(f"«{b[1]}»" for b in parsed if b[0] == "h2") or "нет"
+                tail = next((b[1] for b in reversed(parsed) if b[0] == "paragraph"), "")
                 text += "\n" + ask(token, args.model,
-                                   CONTINUE_PROMPT.format(topic=args.topic, section=section, written=text,
-                                                          words=args.words - len(text.split())),
+                                   CONTINUE_PROMPT.format(topic=args.topic, section=section, subheadings=subheadings,
+                                                          tail=tail, words=args.words - len(text.split())),
                                    context)
             content.extend(parse_section(text, heading))
             print(f"  {heading}: {len(text.split())} слов, всего {count_words(content)}")
