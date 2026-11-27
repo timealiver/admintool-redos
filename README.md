@@ -56,4 +56,4 @@ export GIGACHAT_AUTH_KEY=...
 python3 py/build_lecture.py "Тема лекции" --json lecture.json
 ```
 
-Отчёт по работе — `report/`.
+Отчёт по работе — `report/Aliev_T.R._admintool_report.docx`.
